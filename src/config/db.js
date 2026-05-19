@@ -2,6 +2,10 @@ import mongoose from "mongoose"
 
 const connectDB = async () => {
   try {
+    if (!process.env.MONGO_URI) {
+      console.error("❌ MongoDB URI missing. Please set MONGO_URI in .env")
+      process.exit(1)
+    }
     // Prevent multiple connections 
     if (mongoose.connection.readyState >= 1) {
       console.log("⚡ MongoDB already connected")

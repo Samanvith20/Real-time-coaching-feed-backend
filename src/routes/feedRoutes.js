@@ -1,11 +1,10 @@
 import express from "express"
+import { getFeeds, createFeed } from "../controllers/feedController.js"
 
 const router = express.Router()
 
-router.get("/", (req, res) => {
-  res.json({
-    message: "Feed route working",
-  })
-})
+router.get("/", getFeeds)
+
+router.post("/", createFeed)
 
 export default router

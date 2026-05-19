@@ -1,11 +1,11 @@
-const e = require("express")
-const mongoose = require("mongoose")
+import mongoose from "mongoose"
 
 const feedSchema = new mongoose.Schema(
   {
     title: {
       type: String,
       required: true,
+      unique: true,
     },
 
     description: {

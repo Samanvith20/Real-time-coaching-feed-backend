@@ -1,14 +1,15 @@
 import mongoose from "mongoose"
+import logger from "./logger.js"
 
 const connectDB = async () => {
   try {
     if (!process.env.MONGO_URI) {
-      console.error("❌ MongoDB URI missing. Please set MONGO_URI in .env")
+      logger.error("❌ MongoDB URI missing. Please set MONGO_URI in .env")
       process.exit(1)
     }
     // Prevent multiple connections 
     if (mongoose.connection.readyState >= 1) {
-      console.log("⚡ MongoDB already connected")
+      logger.info("⚡ MongoDB already connected")
       return
     }
 
@@ -20,7 +21,7 @@ const connectDB = async () => {
 
     
   } catch (error) {
-    console.error("❌ MongoDB Connection Failed:", error.message)
+    logger.error("❌ MongoDB Connection Failed:", error.message)
 
     // Exit app in production if DB fails
     process.exit(1)
@@ -29,21 +30,21 @@ const connectDB = async () => {
 
 // Connection events
 mongoose.connection.on("connected", () => {
-  console.log("🟢 Mongoose connected")
+  logger.info("🟢 Connected to MongoDB successfully")
 })
 
 mongoose.connection.on("error", (err) => {
-  console.error("🔴 Mongoose error:", err.message)
+  logger.error("🔴 Mongoose error:", err.message)
 })
 
 mongoose.connection.on("disconnected", () => {
-  console.warn("🟡 Mongoose disconnected")
+  logger.warn("🟡 Mongoose disconnected")
 })
 
 // Graceful shutdown
 process.on("SIGINT", async () => {
   await mongoose.connection.close()
-  console.log("🔻 MongoDB connection closed due to app termination")
+  logger.info("🔻 MongoDB connection closed due to app termination")
   process.exit(0)
 })
 

@@ -1,5 +1,6 @@
 import {Feed} from "../models/feedModel.js"
 import redis from "../config/redis.js"
+import logger from "../config/logger.js"
 
 
 // GET FEEDS
@@ -10,8 +11,7 @@ const getFeeds = async (req, res) => {
 
     if (cachedFeeds) {
 
-      console.log("Serving from Redis cache",)
-      
+      logger.info("Serving from Redis cache")
 
       return res.status(200).json({
         success: true,
@@ -29,7 +29,7 @@ const getFeeds = async (req, res) => {
     // 3. Store in Redis
    await redis.set("feeds", JSON.stringify(feeds))
 
-    console.log("Serving from MongoDB")
+    logger.info("Serving from MongoDB")
 
     res.status(200).json({
       success: true,
@@ -37,7 +37,7 @@ const getFeeds = async (req, res) => {
       feeds,
     })
   } catch (error) {
-    console.log(error)
+    logger.error("Error fetching feeds:", error)
 
     res.status(500).json({
       success: false,
@@ -49,17 +49,28 @@ const getFeeds = async (req, res) => {
 // CREATE FEED
 const createFeed = async (req, res) => {
   try {
-    const { title, description, image, author } = req.body
+    
 
-    // Validation
-    if (!title || !description) {
+    const title = req.body.title?.trim()
+    const description = req.body.description?.trim()
+    const author = req.body.author?.trim() || undefined
+
+    if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: "Title and description required",
+        message: "Image upload required",
       })
     }
 
-    // Save to DB
+    const image = req.file?.path
+
+    if (!title || !description || !image) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields required",
+      })
+    }
+
     const newFeed = await Feed.create({
       title,
       description,
@@ -67,19 +78,19 @@ const createFeed = async (req, res) => {
       author,
     })
 
-    // Invalidate cache
+    logger.info("New feed created:", JSON.stringify(newFeed._id))
+
     await redis.del("feeds")
 
-    // Emit realtime event
     req.io.emit("new-feed", newFeed)
 
     res.status(201).json({
       success: true,
-      message: "Feed created",
       feed: newFeed,
     })
   } catch (error) {
-    console.log(error)
+    logger.error("Error creating feed:", error) 
+    
 
     res.status(500).json({
       success: false,
